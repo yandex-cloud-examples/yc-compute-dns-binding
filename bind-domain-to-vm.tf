@@ -15,6 +15,7 @@ variable "ssh_key_path" {
 # Добавление прочих переменных
 
 locals {
+  zone             = "ru-central1-b"
   network_name     = "webserver-network"
   subnet_name      = "webserver-subnet-ru-central1-b"
   sg_name          = "webserver-sg"
@@ -34,6 +35,7 @@ terraform {
 }
 
 provider "yandex" {
+  zone      = local.zone
   folder_id = var.folder_id
 }
 
@@ -47,7 +49,7 @@ resource "yandex_vpc_network" "webserver-network" {
 
 resource "yandex_vpc_subnet" "webserver-subnet-b" {
   name           = local.subnet_name
-  zone           = "ru-central1-b"
+  zone           = local.zone
   network_id     = "${yandex_vpc_network.webserver-network.id}"
   v4_cidr_blocks = ["192.168.1.0/24"]
 }
@@ -89,14 +91,20 @@ resource "yandex_vpc_security_group" "webserver-sg" {
 
 # Создание ВМ
 
-resource "yandex_compute_image" "lamp-image" {
+resource "yandex_compute_image" "osimage" {
   source_family = "lamp"
+}
+
+resource "yandex_compute_disk" "boot-disk" {
+  name     = "web-server-boot"
+  type     = "network-hdd"
+  image_id = yandex_compute_image.osimage.id
 }
 
 resource "yandex_compute_instance" "mywebserver" {
   name        = local.vm_name
   platform_id = "standard-v2"
-  zone        = "ru-central1-b"
+  zone        = local.zone
 
   resources {
     cores  = "2"
@@ -104,7 +112,7 @@ resource "yandex_compute_instance" "mywebserver" {
   }
 
   boot_disk {
-    image_id = yandex_compute_image.lamp-image.image_id
+    disk_id = yandex_compute_disk.boot-disk.id
   }
 
   network_interface {
