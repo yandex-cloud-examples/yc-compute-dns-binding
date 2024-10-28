@@ -15,9 +15,9 @@ variable "ssh_key_path" {
 # Добавление прочих переменных
 
 locals {
-  zone             = "ru-central1-b"
+  zone             = "ru-central1-a"
   network_name     = "webserver-network"
-  subnet_name      = "webserver-subnet-ru-central1-b"
+  subnet_name      = "webserver-subnet-ru-central1-a"
   sg_name          = "webserver-sg"
   vm_name          = "mywebserver"
   domain_zone_name = "my-domain-zone"
@@ -89,17 +89,22 @@ resource "yandex_vpc_security_group" "webserver-sg" {
   }
 }
 
-# Создание ВМ
+
+# Создание образа
 
 resource "yandex_compute_image" "osimage" {
   source_family = "lamp"
 }
+
+# Создание диска
 
 resource "yandex_compute_disk" "boot-disk" {
   name     = "web-server-boot"
   type     = "network-hdd"
   image_id = yandex_compute_image.osimage.id
 }
+
+# Создание ВМ
 
 resource "yandex_compute_instance" "mywebserver" {
   name        = local.vm_name
